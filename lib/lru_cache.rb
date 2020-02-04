@@ -56,7 +56,7 @@ class LRUCache
     @mutex.synchronize do
       node = @keys[key]
       return unless node
-      # byebug
+
       if node.prev
         node.prev.next = node.next
       else

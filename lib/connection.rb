@@ -17,11 +17,13 @@ class Connection
     while client
       input = client.gets
       
+      redo unless !input.nil? 
+
       Logger.info(input)
 
       input = input.split
 
-      command_class = input[0].start_with?("get") ? Commands::Retrieval : Commands::Storage 
+      command_class = input.first.start_with?("get") ? Commands::Retrieval : Commands::Storage 
 
       request = command_class.new(client, input).create_request
 

@@ -7,7 +7,6 @@ module RequestParser
 
     if Commands::STORAGE.include?(request[:command])
       element = Element.new(
-        # request[:key],
         request[:value],
         request[:flags].to_i,
         request[:exptime].to_i != 0 ? Time.now + request[:exptime].to_i : request[:exptime].to_i

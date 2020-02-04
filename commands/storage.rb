@@ -5,7 +5,6 @@ module Commands
   class Storage < Base
     def create_request
 
-      command = @options[0]
       options = prettify_options
       
       return client_puts("ERROR") if Validator.error?(options)
@@ -26,7 +25,7 @@ module Commands
 
     def prettify_options
       {   
-        command:   @options[0],
+        command:   @options.first,
         key:       @options[1],
         flags:     @options[2],
         exptime:   @options[3],
