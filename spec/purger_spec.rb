@@ -90,7 +90,10 @@ describe Purger do
       expect(response).to eq node4
       purger.send(:dequeue)
       response = purger.queue[1]
-      expect(response).to eq node2        
+      expect(response).to eq node2
+      purger.send(:dequeue)
+      response = purger.queue[1]
+      expect(response).to eq node3        
     end
   end
 end
