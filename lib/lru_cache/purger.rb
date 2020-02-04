@@ -18,7 +18,7 @@ class Purger
       loop do
         sleep(seconds)
         node = first_queue_node
-        while node.exptime < Time.now
+        while node.element.expired?
           dequeue
           LRUCache.instance.remove(node.key, expired: true)
           node = first_queue_node
@@ -56,7 +56,7 @@ class Purger
     parent_index = (index / 2)
 
     return if index <= 1
-    return if @queue[parent_index].exptime <= @queue[index].exptime
+    return if @queue[parent_index].element.exptime <= @queue[index].element.exptime
     exchange(index, parent_index)
     bubble_up(parent_index)
   end
@@ -69,9 +69,9 @@ class Purger
     not_the_last_node = child_index < @queue.size - 1
     left_node = @queue[child_index]
     right_node = @queue[child_index + 1]
-    child_index += 1 if not_the_last_node && right_node.exptime < left_node.exptime
+    child_index += 1 if not_the_last_node && right_node.element.exptime < left_node.element.exptime
 
-    return if @queue[index].exptime <= @queue[child_index].exptime
+    return if @queue[index].element.exptime <= @queue[child_index].element.exptime
 
     exchange(index, child_index)
     bubble_down(child_index)

@@ -4,13 +4,13 @@ require_relative 'lru_cache/node'
 require_relative 'lru_cache/purger'
 
 class LRUCache
-  attr_reader :size, :limit, :head, :tail, :keys, :last_token, :exp_keys
+  attr_reader :size, :limit, :head, :tail, :keys
 
   class << self
     attr_accessor :instance
   end
 
-  def initialize(limit = 100, secondsPurge = 30)
+  def initialize(limit = 100, seconds_purge = 30)
     validate_singleton_instance!
 
     @size     = 0
@@ -19,36 +19,28 @@ class LRUCache
     @purger   = Purger.new
     @mutex    = Mutex.new
 
-    @purger.start(secondsPurge)
+    @purger.start(seconds_purge)
 
     self.class.instance = self
   end
 
   # If update = true cas_token increments.
-  def write(key, value, flags, exptime, cas_token = nil, update: true)
+  def write(key, element, update: true)
     ensure_limit
     remove(key)
     @mutex.synchronize do
       if head
-        node = Node.new(key, value, flags, exptime, cas_token, update: update)
+        node = Node.new(key, element, update: update)
         node.next = head
         head.prev = node
 
         @head = node
       else
-        node = Node.new(
-          key,
-          value,
-          flags,
-          exptime,
-          cas_token,
-          next_node: head,
-          update: update
-        )
+        node = Node.new(key, element, next_node: head, update: update)
         @head = @tail = node
       end
 
-      if node.exptime.is_a?(Time)
+      if node.element.expires?
         @purger.add(node)
       end
 
@@ -60,10 +52,11 @@ class LRUCache
 
   # if read = true node isn't removed from purger , if expired = true node has been removed by purger 
   def remove(key, read: false, expired: false)
+
     @mutex.synchronize do
       node = @keys[key]
       return unless node
-
+      # byebug
       if node.prev
         node.prev.next = node.next
       else
@@ -76,7 +69,7 @@ class LRUCache
         @tail = node.prev
       end
 
-      if node.exptime.is_a?(Time) && !read && !expired
+      if node.element.expires? && !read && !expired
         @purger.delete(node)
       end
 
@@ -89,21 +82,14 @@ class LRUCache
   def read(key)
 
     return unless !@keys[key].nil? 
-    return unless !@keys[key].expired?
+    return unless !@keys[key].element.expired?
     node = @keys[key]
     
     remove(key, read: true)
   
-    write(
-      node.key,
-      node.value,
-      node.flags,
-      node.exptime,
-      node.cas_token,
-      update: false
-    )
+    write(key, node.element, update: false)
 
-    node
+    node.element
   end
 
   def clear

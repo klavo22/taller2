@@ -1,5 +1,6 @@
 require_relative "spec_helper"
 require_relative "../lib/lru_cache"
+require_relative "../lib/element"
 
 describe LRUCache do
 
@@ -15,21 +16,24 @@ describe LRUCache do
 
     describe "WRITE" do
       it "returns true" do
-        response = cache.write("write_test", "test", 0, 0)
+        element1 = Element.new("test", 0, 0)
+        response = cache.write("write_test", element1)
         expect(response).to eq true
-        node = cache.read("write_test")
-        expect(node.value).to eq "test"
+        element = cache.read("write_test")
+        expect(element.value).to eq "test"
         expect(cache.head.key).to eq "write_test"
         expect(cache.tail.key).to eq "write_test"
-        node = cache.keys["write_test"]
-        expect(node.value).to eq "test"
+        element = cache.keys["write_test"].element
+        expect(element.value).to eq "test"
       end
 
       it "checks head and tail" do
-        cache.write("old_key", "test1", 0, 0)
-        cache.write("new_key", "test2", 0, 0)
-        node = cache.read("new_key")
-        expect(node.value).to eq "test2"
+        element1 = Element.new("test1", 0, 0)
+        cache.write("old_key", element1)
+        element2 = Element.new("test2", 0, 0)
+        cache.write("new_key", element2)
+        node = cache.keys["new_key"]
+        expect(node.element.value).to eq "test2"
         expect(node.next.key).to eq "old_key"
         expect(cache.head.key).to eq "new_key"
         expect(cache.head.next.key).to eq "old_key"
@@ -39,9 +43,12 @@ describe LRUCache do
 
     describe "REMOVE" do
       it "returns true" do
-        cache.write("key1", "value1", 0, 0)
-        cache.write("key2", "value2", 0, 0)
-        cache.write("key3", "value3", 0, 0)
+        element1 = Element.new("value1", 0, 0)
+        cache.write("key1", element1)
+        element2 = Element.new("value2", 0, 0)
+        cache.write("key2", element2)
+        element3 = Element.new("value3", 0, 0)
+        cache.write("key3", element3)
         response = cache.remove("key2")
         expect(response).to eq true
         expect(cache.head.next.key).to eq "key1"
@@ -61,17 +68,21 @@ describe LRUCache do
 
     describe "READ" do
       it "returns node" do
-        cache.write("key1", "value1", 0, 0)
+        element1 = Element.new("value1", 0, 0)
+        cache.write("key1", element1)
         response = cache.read("key1")
         expect(response.value).to eq "value1"
-        response = cache.keys["key1"]
+        response = cache.keys["key1"].element
         expect(response.value).to eq "value1"
       end
 
       it "sets node to head" do
-        cache.write("key1", "value1", 0, 0)
-        cache.write("key2", "value2", 0, 0)
-        cache.write("key3", "value3", 0, 0)
+        element1 = Element.new("value1", 0, 0)
+        cache.write("key1", element1)
+        element2 = Element.new("value2", 0, 0)
+        cache.write("key2", element2)
+        element3 = Element.new("value3", 0, 0)
+        cache.write("key3", element3)
         expect(cache.head.key).to eq "key3"
         cache.read("key1")
         expect(cache.head.key).to eq "key1"
@@ -82,27 +93,36 @@ describe LRUCache do
 
     describe "ENSURE_LIMIT" do
       it "returns nil" do
-        cache.write("key1", "value1", 0, 0)
-        cache.write("key2", "value2", 0, 0)
-        cache.write("key3", "value3", 0, 0)
-        cache.write("key4", "value4", 0, 0)
-        cache.write("key5", "value5", 0, 0)
-        cache.write("key6", "value6", 0, 0)
+        element1 = Element.new("value1", 0, 0)
+        cache.write("key1", element1)
+        element2 = Element.new("value2", 0, 0)
+        cache.write("key2", element2)
+        element3 = Element.new("value3", 0, 0)
+        cache.write("key3", element3)
+        element4 = Element.new("value4", 0, 0)
+        cache.write("key4", element4)
+        element5 = Element.new("value5", 0, 0)
+        cache.write("key5", element5)
+        element6 = Element.new("value6", 0, 0)
+        cache.write("key6", element6)
         
         response = cache.read("key1")
         expect(response).to eq nil
         response = cache.keys["key1"]
         expect(response).to eq nil
-        node = cache.read("key2")
-        expect(node).to be_truthy
+        element = cache.read("key2")
+        expect(element).to be_truthy
       end
     end
 
     describe "PURGE" do
       it "returns nil" do
-        cache.write("key1", "value1", 0, Time.now + 1)
-        cache.write("key2", "value2", 0, Time.now + 4)
-        cache.write("key3", "value3", 0, Time.now + 1200)
+        element1 = Element.new("value1", 0, Time.now + 1)
+        cache.write("key1", element1)
+        element2 = Element.new("value2", 0, Time.now + 4)
+        cache.write("key2", element2)
+        element3 = Element.new("value3", 0, Time.now + 1200)
+        cache.write("key3", element3)
         
         sleep(2)
         response1 = cache.read("key1")

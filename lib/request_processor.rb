@@ -64,7 +64,7 @@ module RequestProcessor
       record = read(key)
       if record
         id = data[:command] == "gets" ? " #{record.cas_token}"  : ''
-        response += "VALUE #{record.key} #{record.flags} #{record.bytes}#{id}\r\n#{record.value}\r\n"
+        response += "VALUE #{key} #{record.flags} #{record.bytes}#{id}\r\n#{record.value}\r\n"
       end
     end
     response += "END\r\n"
@@ -74,8 +74,8 @@ module RequestProcessor
   
   private
 
-  def write(key, value, flags, exptime)
-    LRUCache.instance.write(key, value, flags, exptime)
+  def write(key, element)
+    LRUCache.instance.write(key, element)
   end
 
   def read(key)
@@ -83,13 +83,15 @@ module RequestProcessor
   end
 
   def set_values(data)
-    write(data[:key], data[:value], data[:flags], data[:exptime])
+    write(data[:key], data[:element])
   end
 
-  def update(type, updated)
-    record = read(updated[:key])
+  def update(type, data)
+    record  = read(data[:key])
+    updated_value = data[:element].value
     if record
-      write(record.key, record.value.send(type, updated[:value]), record.flags, record.exptime)
+      element = Element.new(record.value.send(type, updated_value), record.flags, record.exptime)
+      write(data[:key], element)
       return true
     end
     false
