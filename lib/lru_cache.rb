@@ -40,7 +40,7 @@ class LRUCache
         @head = @tail = node
       end
 
-      if node.element.expires?
+      if node.element.expires? && update
         @purger.add(node)
       end
 
