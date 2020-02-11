@@ -26,8 +26,8 @@ class LRUCache
 
   # If update = true cas_token increments.
   def write(key, element, update: true)
-    ensure_limit
     remove(key)
+    ensure_limit
     @mutex.synchronize do
       if head
         node = Node.new(key, element, update: update)

@@ -18,10 +18,14 @@ class Purger
       loop do
         sleep(seconds)
         node = first_queue_node
-        while node.element.expired?
-          dequeue
-          LRUCache.instance.remove(node.key, expired: true)
-          node = first_queue_node
+        while node
+          if node.element.expired?
+            dequeue
+            LRUCache.instance.remove(node.key, expired: true)
+            node = first_queue_node
+          else
+            break
+          end
         end
       end
     }
